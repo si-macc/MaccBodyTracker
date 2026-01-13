@@ -1,0 +1,79 @@
+Body Measurement Tracker
+
+- Intro
+You are an expert in full stack developing apps with React and Vite front end (hosted on Vercel) and Supabase backend/database. 
+
+- Brief
+The brief is to create an app to track body measurements. There will be a list of possible measurements and a user can add any they would like to track. There will be, by default, basic measurements that are added. The data will all be stored in a supabase database and the project will be hosted on Vercel. In addition to the measurements list there will be a graph plotting all the data where there will be the ability to have all the measurements concurrently or select which ones to view as well as a data range selector. 
+
+- Detailed Specification
+Measurements Page
+- There will be a list of measurements with the ability to edit/delete each one as well as a button at the top to add. Displayed will be the measurement name, the current measurement and the last date the measurement was taken. 
+- When each measurement is pressed it loads a modal that has the complete set of data. Each one of these data points can be edited or deleted. 
+
+Analytics Page
+- A graph will be presented here with all measurements added by default. Underneath there will be the list of measurements the user can deselect to remove measurements from the graph. In portrait mode the graph will consume half the screen and in landscape it will be the whole screen with a button to popup a menu to select/deselect the measurements
+
+- General notes
+- This isn't an exhaustive list of all functions but a start to hopefully build on.
+- Start by planning out how this will all work with the architecture and design before proceeding with the code writing. 
+- The UI will be of a modern and slick design that is mobile first but should also work with desktop browsers/tablets too.
+- The app is designed to be web app only, not a mobile or tablet specific app.
+M- ake sure to create a .md file as context for any LLM to understand the project. 
+- Break down each part into different mini projects so you are not trying to do it all in one go.
+I- f you have any queries, concerns or questions about the above ask before proceeding. 
+
+
+- Technologies
+React
+Vite
+Tailwind
+REST APIs
+Supabase
+PostgreSQL
+Typescript
+
+
+
+Authentication & Users
+User Authentication - Should users be able to create accounts and log in to track their personal measurements? Or is this a single-user/personal app without authentication?
+Measurements
++ just a single user is fine
+Default Measurements - What basic measurements should be added by default? For example:
+
+Weight, Height, BMI
+Chest, Waist, Hips
+Biceps, Thighs, Calves
+Neck, Shoulders
+Body Fat %
+Should I decide these, or do you have specific ones in mind?
+
+Units - Should users be able to choose between metric (kg, cm) and imperial (lbs, inches)? Should this be a global setting or per-measurement?
++ default to metric but have imperial option too
+
+Multiple entries per day - Can a user log the same measurement multiple times in a day, or should it be limited to one entry per measurement per day?
++ can add as many as they want (so time is important)
+
+Analytics
+Date Range Options - For the date range selector, what presets would you like? Examples:
+
+Last 7 days, 30 days, 90 days, 1 year, All time
+Custom date range picker?
++ custom range picker
+
+Graph Library Preference - Any preference for the charting library? (Recharts, Chart.js, Victory, etc.) I'd recommend Recharts for its React integration and responsive design.
++ happy to go with recommendation
+
+Infrastructure
+Supabase Setup - Do you already have a Supabase project created, or should I include full setup instructions for creating one?
++ I have a supabase account but no project setup, instructions would be helpful
+
+Environment Variables - I'll need you to provide the Supabase URL and Anon Key. Do you have these ready, or should I set up the project structure with placeholder environment variables?
++ placeholder 
+
+Design
+Color Scheme/Theme - Any preference for the color palette? Dark mode, light mode, or both with a toggle?
++ sharky blue (sort of blue/gray colour) should be primary (other colours can follow suit). A light/dark mode toggle 
+
+Branding - Any specific app name beyond "Body Measurement Tracker"? A logo or icon you'd like to use?
++ no, you can create one for me
