@@ -1,5 +1,6 @@
-import { ChevronRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { ChevronRight, TrendingUp, TrendingDown, Minus, Plus } from 'lucide-react'
 import Card from '@/components/common/Card'
+import Button from '@/components/common/Button'
 import { useSettings } from '@/contexts/SettingsContext'
 import { formatDate, formatValue, convertUnit, getDisplayUnit } from '@/lib/utils'
 import type { MeasurementWithLatest } from '@/types'
@@ -8,11 +9,12 @@ interface MeasurementCardProps {
   measurement: MeasurementWithLatest
   previousValue?: number
   onClick: () => void
+  onQuickAdd: () => void
 }
 
-export default function MeasurementCard({ measurement, previousValue, onClick }: MeasurementCardProps) {
+export default function MeasurementCard({ measurement, previousValue, onClick, onQuickAdd }: MeasurementCardProps) {
   const { settings } = useSettings()
-  const { name, unit_metric, unit_imperial, category, latest_entry } = measurement
+  const { name, unit_metric, unit_imperial, category, latest_entry, is_calculated } = measurement
 
   const displayUnit = getDisplayUnit(unit_metric, unit_imperial, settings.unit_system)
   
@@ -45,6 +47,11 @@ export default function MeasurementCard({ measurement, previousValue, onClick }:
       default:
         return null
     }
+  }
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onQuickAdd()
   }
 
   return (
@@ -89,8 +96,21 @@ export default function MeasurementCard({ measurement, previousValue, onClick }:
           )}
         </div>
 
-        {/* Arrow icon */}
-        <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 ml-2" />
+        {/* Quick add button (not for calculated measurements) */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          {!is_calculated && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleQuickAdd}
+              className="text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
+              title="Quick add entry"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          )}
+          <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+        </div>
       </div>
     </Card>
   )

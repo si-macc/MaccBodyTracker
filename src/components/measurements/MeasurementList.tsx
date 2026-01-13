@@ -6,6 +6,12 @@ import Loading from '@/components/common/Loading'
 import MeasurementCard from './MeasurementCard'
 import MeasurementFormModal from './MeasurementFormModal'
 import MeasurementDetailModal from './MeasurementDetailModal'
+import EntryFormModal from './EntryFormModal'
+import JP3FormModal from './JP3FormModal'
+import QuickLogBar from './QuickLogBar'
+import { useSettings } from '@/contexts/SettingsContext'
+import { useEntries } from '@/hooks/useEntries'
+import { getDisplayUnit } from '@/lib/utils'
 import type { MeasurementWithLatest, MeasurementFormData } from '@/types'
 
 interface MeasurementListProps {
@@ -27,9 +33,14 @@ export default function MeasurementList({
   onDeleteMeasurement,
   onRefresh,
 }: MeasurementListProps) {
+  const { settings } = useSettings()
+  const { addEntry } = useEntries()
+  
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedMeasurement, setSelectedMeasurement] = useState<MeasurementWithLatest | null>(null)
   const [editingMeasurement, setEditingMeasurement] = useState<MeasurementWithLatest | null>(null)
+  const [quickAddMeasurement, setQuickAddMeasurement] = useState<MeasurementWithLatest | null>(null)
+  const [showJP3Modal, setShowJP3Modal] = useState(false)
 
   // Group measurements by category
   const groupedMeasurements = measurements.reduce((acc, measurement) => {
@@ -71,6 +82,23 @@ export default function MeasurementList({
     }
   }
 
+  const handleQuickAdd = (measurement: MeasurementWithLatest) => {
+    // For JP3 calculated measurement, show the JP3 form
+    if (measurement.category === 'JP3 Calculated') {
+      setShowJP3Modal(true)
+    } else {
+      setQuickAddMeasurement(measurement)
+    }
+  }
+
+  const handleQuickAddSubmit = async (data: { value: number; recorded_at: string; notes?: string }) => {
+    if (quickAddMeasurement) {
+      await addEntry(quickAddMeasurement.id, data)
+      setQuickAddMeasurement(null)
+      onRefresh()
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -108,6 +136,15 @@ export default function MeasurementList({
         </Button>
       </div>
 
+      {/* Quick Log Bar */}
+      {measurements.length > 0 && (
+        <QuickLogBar
+          measurements={measurements}
+          onQuickLog={(m) => setQuickAddMeasurement(m)}
+          onLogJP3={() => setShowJP3Modal(true)}
+        />
+      )}
+
       {/* Content */}
       {measurements.length === 0 ? (
         <EmptyState
@@ -134,6 +171,7 @@ export default function MeasurementList({
                     key={measurement.id}
                     measurement={measurement}
                     onClick={() => setSelectedMeasurement(measurement)}
+                    onQuickAdd={() => handleQuickAdd(measurement)}
                   />
                 ))}
               </div>
@@ -176,6 +214,32 @@ export default function MeasurementList({
           setSelectedMeasurement(null)
         }}
         onRefresh={onRefresh}
+      />
+
+      {/* Quick Add Entry Modal */}
+      {quickAddMeasurement && (
+        <EntryFormModal
+          isOpen={!!quickAddMeasurement}
+          onClose={() => setQuickAddMeasurement(null)}
+          onSubmit={handleQuickAddSubmit}
+          title={`Add ${quickAddMeasurement.name}`}
+          unit={getDisplayUnit(
+            quickAddMeasurement.unit_metric,
+            quickAddMeasurement.unit_imperial,
+            settings.unit_system
+          )}
+          unitMetric={quickAddMeasurement.unit_metric}
+        />
+      )}
+
+      {/* JP3 Calculation Modal */}
+      <JP3FormModal
+        isOpen={showJP3Modal}
+        onClose={() => setShowJP3Modal(false)}
+        onComplete={() => {
+          setShowJP3Modal(false)
+          onRefresh()
+        }}
       />
     </div>
   )

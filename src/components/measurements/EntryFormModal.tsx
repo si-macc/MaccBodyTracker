@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import Modal from '@/components/common/Modal'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
-import { formatDateTimeLocal } from '@/lib/utils'
+import { useSettings } from '@/contexts/SettingsContext'
+import { formatDateTimeLocal, convertToMetric } from '@/lib/utils'
 
 interface EntryFormModalProps {
   isOpen: boolean
@@ -10,6 +11,7 @@ interface EntryFormModalProps {
   onSubmit: (data: { value: number; recorded_at: string; notes?: string }) => Promise<void>
   title: string
   unit: string
+  unitMetric?: string  // Needed for conversion
   initialData?: {
     value: number
     recorded_at: string
@@ -23,8 +25,10 @@ export default function EntryFormModal({
   onSubmit,
   title,
   unit,
+  unitMetric,
   initialData,
 }: EntryFormModalProps) {
+  const { settings } = useSettings()
   const [value, setValue] = useState('')
   const [recordedAt, setRecordedAt] = useState('')
   const [notes, setNotes] = useState('')
@@ -50,10 +54,15 @@ export default function EntryFormModal({
     const numValue = parseFloat(value)
     if (isNaN(numValue)) return
 
+    // Convert to metric if user is using imperial units
+    const metricValue = unitMetric 
+      ? convertToMetric(numValue, unitMetric, settings.unit_system)
+      : numValue
+
     setIsSubmitting(true)
     try {
       await onSubmit({
-        value: numValue,
+        value: metricValue,
         recorded_at: new Date(recordedAt).toISOString(),
         notes: notes.trim() || undefined,
       })

@@ -192,6 +192,7 @@ export default function MeasurementDetailModal({
         onSubmit={handleAddEntry}
         title={`Add ${measurement.name}`}
         unit={displayUnit}
+        unitMetric={measurement.unit_metric}
       />
 
       {/* Edit Entry Modal */}
@@ -201,6 +202,7 @@ export default function MeasurementDetailModal({
         onSubmit={handleUpdateEntry}
         title={`Edit ${measurement.name}`}
         unit={displayUnit}
+        unitMetric={measurement.unit_metric}
         initialData={editingEntry ? {
           value: convertUnit(editingEntry.value, measurement.unit_metric, settings.unit_system),
           recorded_at: editingEntry.recorded_at,

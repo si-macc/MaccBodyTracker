@@ -98,7 +98,7 @@ export function getChartColor(index: number): string {
   return colors[index % colors.length]
 }
 
-// Convert value between unit systems
+// Convert value from metric to imperial for display
 export function convertUnit(
   value: number,
   unitMetric: string,
@@ -111,6 +111,25 @@ export function convertUnit(
     return value * 2.20462 // kg to lbs
   } else if (unitMetric === 'cm') {
     return value * 0.393701 // cm to inches
+  }
+  
+  // No conversion for %, mm, etc.
+  return value
+}
+
+// Convert value from imperial to metric for storage
+export function convertToMetric(
+  value: number,
+  unitMetric: string,
+  fromSystem: 'metric' | 'imperial'
+): number {
+  if (fromSystem === 'metric') return value // Already in metric
+  
+  // Convert from imperial to metric based on unit type
+  if (unitMetric === 'kg') {
+    return value * 0.453592 // lbs to kg
+  } else if (unitMetric === 'cm') {
+    return value * 2.54 // inches to cm
   }
   
   // No conversion for %, mm, etc.
