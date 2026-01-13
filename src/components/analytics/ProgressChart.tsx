@@ -30,7 +30,7 @@ export default function ProgressChart({ measurement, entries }: ProgressChartPro
       .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime())
       .map(entry => {
         const displayValue = settings.unit_system === 'imperial'
-          ? convertUnit(entry.value, measurement.unit_metric, measurement.unit_imperial)
+          ? convertUnit(entry.value, measurement.unit_metric, 'imperial')
           : entry.value
 
         return {
@@ -78,7 +78,7 @@ export default function ProgressChart({ measurement, entries }: ProgressChartPro
     )
   }
 
-  const displayUnit = getDisplayUnit(measurement, settings.unit_system)
+  const displayUnit = getDisplayUnit(measurement.unit_metric, measurement.unit_imperial, settings.unit_system as 'metric' | 'imperial')
 
   return (
     <div className="card p-6">

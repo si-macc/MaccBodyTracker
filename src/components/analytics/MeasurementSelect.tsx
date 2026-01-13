@@ -12,8 +12,6 @@ export default function MeasurementSelect({
   selectedId, 
   onChange 
 }: MeasurementSelectProps) {
-  const selected = measurements.find(m => m.id === selectedId)
-
   // Group measurements by category
   const grouped = measurements.reduce((acc, m) => {
     if (!acc[m.category]) {

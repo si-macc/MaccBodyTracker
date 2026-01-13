@@ -101,11 +101,11 @@ export default function AnalyticsPage() {
         
         // Convert for display
         latestWeight = settings.unit_system === 'imperial'
-          ? convertUnit(lastWeight, weightMeasurement.unit_metric, weightMeasurement.unit_imperial)
+          ? convertUnit(lastWeight, weightMeasurement.unit_metric, 'imperial')
           : lastWeight
           
         weightChange = settings.unit_system === 'imperial'
-          ? convertUnit(weightChange, weightMeasurement.unit_metric, weightMeasurement.unit_imperial)
+          ? convertUnit(weightChange, weightMeasurement.unit_metric, 'imperial')
           : weightChange
       }
     }
@@ -130,7 +130,7 @@ export default function AnalyticsPage() {
   const weightUnit = useMemo(() => {
     const weightMeasurement = measurements.find(m => m.name === 'Weight')
     if (!weightMeasurement) return 'kg'
-    return getDisplayUnit(weightMeasurement, settings.unit_system)
+    return getDisplayUnit(weightMeasurement.unit_metric, weightMeasurement.unit_imperial, settings.unit_system as 'metric' | 'imperial')
   }, [measurements, settings.unit_system])
 
   if (measurementsLoading) {
@@ -290,19 +290,19 @@ export default function AnalyticsPage() {
                   .slice(0, 10)
                   .map((entry, index, arr) => {
                     const displayValue = settings.unit_system === 'imperial'
-                      ? convertUnit(entry.value, selectedMeasurement.unit_metric, selectedMeasurement.unit_imperial)
+                      ? convertUnit(entry.value, selectedMeasurement.unit_metric, 'imperial')
                       : entry.value
                     
                     const prevEntry = arr[index + 1]
                     let change: number | null = null
                     if (prevEntry) {
                       const prevValue = settings.unit_system === 'imperial'
-                        ? convertUnit(prevEntry.value, selectedMeasurement.unit_metric, selectedMeasurement.unit_imperial)
+                        ? convertUnit(prevEntry.value, selectedMeasurement.unit_metric, 'imperial')
                         : prevEntry.value
                       change = displayValue - prevValue
                     }
 
-                    const displayUnit = getDisplayUnit(selectedMeasurement, settings.unit_system)
+                    const displayUnit = getDisplayUnit(selectedMeasurement.unit_metric, selectedMeasurement.unit_imperial, settings.unit_system as 'metric' | 'imperial')
 
                     return (
                       <tr 

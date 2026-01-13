@@ -199,7 +199,7 @@ export default function ComparisonChart({
               strokeDasharray="3 3"
             />
             <Tooltip 
-              content={({ active, payload, label }) => {
+              content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
                 
                 return (

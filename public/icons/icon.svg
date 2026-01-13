@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="96" fill="#3B5B7A"/>
+  <g transform="translate(80, 80)">
+    <!-- Ruler/measurement icon -->
+    <rect x="140" y="40" width="72" height="272" rx="8" fill="white"/>
+    <rect x="156" y="72" width="40" height="8" rx="2" fill="#3B5B7A"/>
+    <rect x="172" y="104" width="24" height="8" rx="2" fill="#3B5B7A"/>
+    <rect x="156" y="136" width="40" height="8" rx="2" fill="#3B5B7A"/>
+    <rect x="172" y="168" width="24" height="8" rx="2" fill="#3B5B7A"/>
+    <rect x="156" y="200" width="40" height="8" rx="2" fill="#3B5B7A"/>
+    <rect x="172" y="232" width="24" height="8" rx="2" fill="#3B5B7A"/>
+    <rect x="156" y="264" width="40" height="8" rx="2" fill="#3B5B7A"/>
+    <!-- Chart line -->
+    <path d="M56 240 L104 200 L152 220 L200 160 L248 180 L296 120" 
+          stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="56" cy="240" r="10" fill="white"/>
+    <circle cx="104" cy="200" r="10" fill="white"/>
+    <circle cx="152" cy="220" r="10" fill="white"/>
+    <circle cx="200" cy="160" r="10" fill="white"/>
+    <circle cx="248" cy="180" r="10" fill="white"/>
+    <circle cx="296" cy="120" r="10" fill="white"/>
+  </g>
+</svg>
