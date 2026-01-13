@@ -9,17 +9,23 @@ import {
   DateRange,
   getDefaultDateRange,
   MeasurementSelect,
+  MeasurementMultiSelect,
   ProgressChart,
+  ComparisonChart,
   StatsCard
 } from '@/components/analytics'
 import Loading from '@/components/common/Loading'
 import type { MeasurementEntry } from '@/types'
 
+type ChartMode = 'single' | 'compare'
+
 export default function AnalyticsPage() {
   const { measurements, isLoading: measurementsLoading } = useMeasurements()
   const { settings } = useSettings()
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange)
+  const [chartMode, setChartMode] = useState<ChartMode>('compare')
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(null)
+  const [selectedMeasurementIds, setSelectedMeasurementIds] = useState<string[]>([])
   const [entries, setEntries] = useState<MeasurementEntry[]>([])
   const [isLoadingEntries, setIsLoadingEntries] = useState(false)
 
@@ -35,7 +41,19 @@ export default function AnalyticsPage() {
       const weight = chartableMeasurements.find(m => m.name === 'Weight')
       setSelectedMeasurementId(weight?.id || chartableMeasurements[0].id)
     }
-  }, [chartableMeasurements, selectedMeasurementId])
+    // Auto-select default measurements for comparison
+    if (selectedMeasurementIds.length === 0 && chartableMeasurements.length > 0) {
+      const defaultNames = ['Weight', 'Waist', 'Chest']
+      const defaults = chartableMeasurements
+        .filter(m => defaultNames.includes(m.name))
+        .map(m => m.id)
+      if (defaults.length > 0) {
+        setSelectedMeasurementIds(defaults)
+      } else {
+        setSelectedMeasurementIds([chartableMeasurements[0].id])
+      }
+    }
+  }, [chartableMeasurements, selectedMeasurementId, selectedMeasurementIds.length])
 
   // Fetch entries for date range
   useEffect(() => {
@@ -171,14 +189,31 @@ export default function AnalyticsPage() {
 
       {/* Chart Section */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="sm:w-64">
-            <MeasurementSelect
-              measurements={chartableMeasurements}
-              selectedId={selectedMeasurementId}
-              onChange={setSelectedMeasurementId}
-            />
+        {/* Chart Mode Tabs */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+            <button
+              onClick={() => setChartMode('compare')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors
+                         ${chartMode === 'compare'
+                           ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                         }`}
+            >
+              Compare Trends
+            </button>
+            <button
+              onClick={() => setChartMode('single')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors
+                         ${chartMode === 'single'
+                           ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                         }`}
+            >
+              Single Measurement
+            </button>
           </div>
+          
           {isLoadingEntries && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <Loading size="sm" />
@@ -187,14 +222,48 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        <ProgressChart
-          measurement={selectedMeasurement}
-          entries={entries}
-        />
+        {/* Measurement Selection */}
+        <div className="flex flex-col gap-4">
+          {chartMode === 'compare' ? (
+            <div className="max-w-2xl">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Select measurements to compare (up to 8)
+              </label>
+              <MeasurementMultiSelect
+                measurements={chartableMeasurements}
+                selectedIds={selectedMeasurementIds}
+                onChange={setSelectedMeasurementIds}
+                maxSelections={8}
+              />
+            </div>
+          ) : (
+            <div className="sm:w-64">
+              <MeasurementSelect
+                measurements={chartableMeasurements}
+                selectedId={selectedMeasurementId}
+                onChange={setSelectedMeasurementId}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Chart */}
+        {chartMode === 'compare' ? (
+          <ComparisonChart
+            measurements={chartableMeasurements}
+            selectedIds={selectedMeasurementIds}
+            entries={entries}
+          />
+        ) : (
+          <ProgressChart
+            measurement={selectedMeasurement}
+            entries={entries}
+          />
+        )}
       </div>
 
-      {/* Recent Entries Table */}
-      {selectedMeasurement && entries.filter(e => e.measurement_id === selectedMeasurement.id).length > 0 && (
+      {/* Recent Entries Table - Only show in single mode */}
+      {chartMode === 'single' && selectedMeasurement && entries.filter(e => e.measurement_id === selectedMeasurement.id).length > 0 && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
             Recent Entries
