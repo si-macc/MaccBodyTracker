@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -27,11 +27,35 @@ interface ChartDataPoint {
   [key: string]: number | string | undefined
 }
 
-export default function ComparisonChart({ 
-  measurements, 
-  selectedIds, 
-  entries 
+function computeMovingAverages(
+  data: ChartDataPoint[],
+  keys: string[],
+  window: number
+): ChartDataPoint[] {
+  return data.map((point, i) => {
+    const avgPoint: ChartDataPoint = { ...point }
+    keys.forEach(key => {
+      const avgKey = `${key}_avg`
+      // Collect non-null values in the window
+      const windowValues: number[] = []
+      for (let j = Math.max(0, i - window + 1); j <= i; j++) {
+        const val = data[j][key]
+        if (typeof val === 'number') windowValues.push(val)
+      }
+      avgPoint[avgKey] = windowValues.length >= Math.min(window, 3)
+        ? windowValues.reduce((a, b) => a + b, 0) / windowValues.length
+        : undefined
+    })
+    return avgPoint
+  })
+}
+
+export default function ComparisonChart({
+  measurements,
+  selectedIds,
+  entries
 }: ComparisonChartProps) {
+  const [showAverage, setShowAverage] = useState(false)
   const selectedMeasurements = useMemo(() => {
     return selectedIds
       .map(id => measurements.find(m => m.id === id))
@@ -139,6 +163,11 @@ export default function ComparisonChart({
     return { chartData: data, measurementStats: stats }
   }, [selectedIds, entries])
 
+  const chartDataWithAvg = useMemo(() => {
+    if (!chartData.length) return chartData
+    return computeMovingAverages(chartData, selectedIds, 7)
+  }, [chartData, selectedIds])
+
   if (selectedIds.length === 0) {
     return (
       <div className="card p-8 flex items-center justify-center h-[400px]">
@@ -167,14 +196,27 @@ export default function ComparisonChart({
             Progress Comparison
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Percentage change from baseline
+            Percentage change from baseline{showAverage ? ' (7-point avg)' : ''}
           </p>
         </div>
+        <button
+          onClick={() => setShowAverage(!showAverage)}
+          className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"
+        >
+          <span className="text-xs">Avg</span>
+          <div className={`relative w-9 h-5 rounded-full transition-colors
+                          ${showAverage
+                            ? 'bg-green-500'
+                            : 'bg-slate-300 dark:bg-slate-600'}`}>
+            <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform
+                            ${showAverage ? 'translate-x-4' : 'translate-x-0'}`} />
+          </div>
+        </button>
       </div>
 
       <div className="h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+          <LineChart data={chartDataWithAvg} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
             <CartesianGrid 
               strokeDasharray="3 3" 
               stroke="currentColor" 
@@ -198,28 +240,34 @@ export default function ComparisonChart({
               stroke="#94a3b8" 
               strokeDasharray="3 3"
             />
-            <Tooltip 
+            <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
-                
+
                 return (
-                  <div className="bg-surface-light dark:bg-surface-dark border border-slate-200 
+                  <div className="bg-surface-light dark:bg-surface-dark border border-slate-200
                                   dark:border-slate-700 rounded-lg shadow-lg p-3 min-w-[180px]">
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">
                       {payload[0]?.payload?.fullDate}
                     </p>
                     <div className="space-y-1.5">
                       {payload.map((entry: any, index: number) => {
-                        const measurement = selectedMeasurements.find(m => m.id === entry.dataKey)
+                        const dataKey = showAverage
+                          ? (entry.dataKey as string).replace('_avg', '')
+                          : entry.dataKey
+                        const measurement = selectedMeasurements.find(m => m.id === dataKey)
                         if (!measurement) return null
-                        
-                        const rawValue = entry.payload[`${entry.dataKey}_raw`]
-                        
+
+                        const rawValue = entry.payload[`${dataKey}_raw`]
+                        const val = entry.value
+
+                        if (val == null) return null
+
                         return (
                           <div key={index} className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-2">
-                              <div 
-                                className="w-2.5 h-2.5 rounded-full" 
+                              <div
+                                className="w-2.5 h-2.5 rounded-full"
                                 style={{ backgroundColor: entry.color }}
                               />
                               <span className="text-xs text-slate-600 dark:text-slate-300">
@@ -228,15 +276,15 @@ export default function ComparisonChart({
                             </div>
                             <div className="text-right">
                               <span className={`text-xs font-semibold
-                                             ${entry.value < 0 
-                                               ? 'text-green-600 dark:text-green-400' 
-                                               : entry.value > 0 
+                                             ${val < 0
+                                               ? 'text-green-600 dark:text-green-400'
+                                               : val > 0
                                                  ? 'text-red-600 dark:text-red-400'
                                                  : 'text-slate-600 dark:text-slate-400'
                                              }`}>
-                                {entry.value > 0 ? '+' : ''}{entry.value?.toFixed(1)}%
+                                {val > 0 ? '+' : ''}{val?.toFixed(1)}%
                               </span>
-                              {rawValue !== undefined && (
+                              {rawValue !== undefined && !showAverage && (
                                 <span className="text-xs text-slate-400 ml-1">
                                   ({rawValue.toFixed(1)})
                                 </span>
@@ -250,20 +298,21 @@ export default function ComparisonChart({
                 )
               }}
             />
-            <Legend 
+            <Legend
               verticalAlign="bottom"
               height={36}
               formatter={(value) => {
-                const measurement = selectedMeasurements.find(m => m.id === value)
+                const id = showAverage ? value.replace('_avg', '') : value
+                const measurement = selectedMeasurements.find(m => m.id === id)
                 return measurement?.name || value
               }}
             />
             {selectedIds.map((id, index) => (
-              <Line 
+              <Line
                 key={id}
-                type="monotone" 
-                dataKey={id}
-                name={id}
+                type="monotone"
+                dataKey={showAverage ? `${id}_avg` : id}
+                name={showAverage ? `${id}_avg` : id}
                 stroke={CHART_COLORS[index % CHART_COLORS.length]}
                 strokeWidth={2}
                 dot={{ fill: CHART_COLORS[index % CHART_COLORS.length], strokeWidth: 0, r: 3 }}
