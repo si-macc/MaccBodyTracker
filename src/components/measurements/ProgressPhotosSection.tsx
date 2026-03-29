@@ -15,7 +15,7 @@ interface ProgressPhotosSectionProps {
 }
 
 export default function ProgressPhotosSection({ measurements }: ProgressPhotosSectionProps) {
-  const { photos, isLoading, isUploading, fetchPhotos, uploadPhotos, deletePhoto } = useProgressPhotos()
+  const { photos, isLoading, isUploading, error, fetchPhotos, uploadPhotos, deletePhoto } = useProgressPhotos()
   const [showUpload, setShowUpload] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<ProgressPhoto | null>(null)
 
@@ -45,6 +45,13 @@ export default function ProgressPhotosSection({ measurements }: ProgressPhotosSe
           Upload
         </Button>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-sm text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Content */}
       {isLoading ? (

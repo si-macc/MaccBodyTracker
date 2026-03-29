@@ -73,20 +73,27 @@ export function useProgressPhotos() {
           .from('progress-photos')
           .upload(filePath, file)
 
-        if (uploadError) throw uploadError
+        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`)
 
-        // Insert record (image_url stored as path reference, signed URLs generated on fetch)
+        // Generate signed URL immediately for the uploaded file
+        const { data: signedData, error: signError } = await supabase.storage
+          .from('progress-photos')
+          .createSignedUrl(filePath, 3600)
+
+        if (signError) throw new Error(`Signed URL failed: ${signError.message}`)
+
+        // Insert record with signed URL
         const { error: insertError } = await supabase
           .from('progress_photos')
           .insert({
             image_path: filePath,
-            image_url: filePath,
+            image_url: signedData.signedUrl,
             caption: caption || null,
             measurement_snapshot: snapshot,
             taken_at: new Date().toISOString(),
           })
 
-        if (insertError) throw insertError
+        if (insertError) throw new Error(`DB insert failed: ${insertError.message}`)
       }
 
       await fetchPhotos()
