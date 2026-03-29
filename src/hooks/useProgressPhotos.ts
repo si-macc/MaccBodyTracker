@@ -18,7 +18,22 @@ export function useProgressPhotos() {
         .order('taken_at', { ascending: false })
 
       if (fetchError) throw fetchError
-      setPhotos(data || [])
+
+      // Generate signed URLs for private bucket (1 hour expiry)
+      const photosWithUrls = await Promise.all(
+        (data || []).map(async (photo) => {
+          const { data: signedData, error: signError } = await supabase.storage
+            .from('progress-photos')
+            .createSignedUrl(photo.image_path, 3600)
+
+          return {
+            ...photo,
+            image_url: signError ? photo.image_url : signedData.signedUrl,
+          }
+        })
+      )
+
+      setPhotos(photosWithUrls)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch photos')
     } finally {
@@ -60,17 +75,12 @@ export function useProgressPhotos() {
 
         if (uploadError) throw uploadError
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('progress-photos')
-          .getPublicUrl(filePath)
-
-        // Insert record
+        // Insert record (image_url stored as path reference, signed URLs generated on fetch)
         const { error: insertError } = await supabase
           .from('progress_photos')
           .insert({
             image_path: filePath,
-            image_url: urlData.publicUrl,
+            image_url: filePath,
             caption: caption || null,
             measurement_snapshot: snapshot,
             taken_at: new Date().toISOString(),
