@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { BarChart3, Activity, Scale, Target } from 'lucide-react'
+import { startOfWeek, endOfWeek, format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useMeasurements } from '@/hooks/useMeasurements'
 import { useSettings } from '@/contexts/SettingsContext'
@@ -261,6 +262,109 @@ export default function AnalyticsPage() {
           />
         )}
       </div>
+
+      {/* Weekly Averages Table - Only show in single mode */}
+      {chartMode === 'single' && selectedMeasurement && (() => {
+        const measurementEntries = entries
+          .filter(e => e.measurement_id === selectedMeasurement.id)
+          .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime())
+
+        if (measurementEntries.length === 0) return null
+
+        // Group by week (Mon-Sun)
+        const weekGroups: Record<string, { values: number[]; weekStart: Date }> = {}
+        measurementEntries.forEach(entry => {
+          const ws = startOfWeek(new Date(entry.recorded_at), { weekStartsOn: 1 })
+          const key = format(ws, 'yyyy-MM-dd')
+          if (!weekGroups[key]) weekGroups[key] = { values: [], weekStart: ws }
+          const displayValue = settings.unit_system === 'imperial'
+            ? convertUnit(entry.value, selectedMeasurement.unit_metric, 'imperial')
+            : entry.value
+          weekGroups[key].values.push(displayValue)
+        })
+
+        const sortedWeeks = Object.keys(weekGroups).sort()
+        if (sortedWeeks.length === 0) return null
+
+        const displayUnit = getDisplayUnit(
+          selectedMeasurement.unit_metric,
+          selectedMeasurement.unit_imperial,
+          settings.unit_system as 'metric' | 'imperial'
+        )
+
+        // Build rows with averages and changes
+        const rows = sortedWeeks.map((key, i) => {
+          const group = weekGroups[key]
+          const avg = group.values.reduce((a, b) => a + b, 0) / group.values.length
+          const we = endOfWeek(group.weekStart, { weekStartsOn: 1 })
+          const label = `${format(group.weekStart, 'MMM d')} – ${format(we, 'MMM d')}`
+
+          let change: number | null = null
+          let changePercent: number | null = null
+          if (i > 0) {
+            const prevGroup = weekGroups[sortedWeeks[i - 1]]
+            const prevAvg = prevGroup.values.reduce((a, b) => a + b, 0) / prevGroup.values.length
+            change = avg - prevAvg
+            changePercent = prevAvg !== 0 ? (change / prevAvg) * 100 : 0
+          }
+
+          return { key, label, avg, entries: group.values.length, change, changePercent }
+        })
+
+        return (
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+              Weekly Averages
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="text-left py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                      Week
+                    </th>
+                    <th className="text-right py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                      Avg
+                    </th>
+                    <th className="text-right py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                      Change
+                    </th>
+                    <th className="text-right py-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                      Entries
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.reverse().map(row => (
+                    <tr
+                      key={row.key}
+                      className="border-b border-slate-100 dark:border-slate-800 last:border-0"
+                    >
+                      <td className="py-3 text-sm text-slate-900 dark:text-slate-100">
+                        {row.label}
+                      </td>
+                      <td className="py-3 text-sm text-right font-medium text-slate-900 dark:text-slate-100">
+                        {row.avg.toFixed(1)} {displayUnit}
+                      </td>
+                      <td className={`py-3 text-sm text-right font-medium
+                                     ${row.change === null ? 'text-slate-400' :
+                                       row.change < 0 ? 'text-green-600 dark:text-green-400' :
+                                       row.change > 0 ? 'text-red-600 dark:text-red-400' :
+                                       'text-slate-400'}`}>
+                        {row.change === null ? '—' :
+                         `${row.change > 0 ? '+' : ''}${row.change.toFixed(1)} (${row.changePercent! > 0 ? '+' : ''}${row.changePercent!.toFixed(1)}%)`}
+                      </td>
+                      <td className="py-3 text-sm text-right text-slate-500 dark:text-slate-400">
+                        {row.entries}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Recent Entries Table - Only show in single mode */}
       {chartMode === 'single' && selectedMeasurement && entries.filter(e => e.measurement_id === selectedMeasurement.id).length > 0 && (
