@@ -86,6 +86,26 @@ export const MEASUREMENT_CATEGORIES = [
 
 export type MeasurementCategory = typeof MEASUREMENT_CATEGORIES[number]
 
+// Progress photo with measurement snapshot
+export interface MeasurementSnapshot {
+  name: string
+  value: number
+  unit_metric: string
+  unit_imperial: string
+  recorded_at: string
+}
+
+export interface ProgressPhoto {
+  id: string
+  image_path: string
+  image_url: string
+  caption?: string
+  measurement_snapshot: MeasurementSnapshot[]
+  taken_at: string
+  created_at: string
+  updated_at: string
+}
+
 // Unit conversion helpers
 export const UNIT_CONVERSIONS = {
   // kg to lbs

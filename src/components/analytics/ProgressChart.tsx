@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   ReferenceLine
 } from 'recharts'
-import { format } from 'date-fns'
+import { format, startOfWeek } from 'date-fns'
 import { useSettings } from '@/contexts/SettingsContext'
 import { convertUnit, getDisplayUnit } from '@/lib/utils'
 import type { MeasurementEntry, MeasurementWithLatest } from '@/types'
@@ -74,6 +74,32 @@ export default function ProgressChart({ measurement, entries }: ProgressChartPro
     const changePercent = first !== 0 ? ((change / first) * 100) : 0
 
     return { min, max, avg, first, last, change, changePercent }
+  }, [chartData])
+
+  const weeklyAvgChange = useMemo(() => {
+    if (!chartData.length) return null
+
+    // Group entries by week (Mon-Sun)
+    const weekGroups: Record<string, number[]> = {}
+    chartData.forEach(d => {
+      const weekStart = startOfWeek(new Date(d.date), { weekStartsOn: 1 })
+      const key = format(weekStart, 'yyyy-MM-dd')
+      if (!weekGroups[key]) weekGroups[key] = []
+      weekGroups[key].push(d.value)
+    })
+
+    // Sort weeks chronologically and get the two most recent
+    const sortedWeeks = Object.keys(weekGroups).sort()
+    if (sortedWeeks.length < 2) return null
+
+    const currentWeekKey = sortedWeeks[sortedWeeks.length - 1]
+    const prevWeekKey = sortedWeeks[sortedWeeks.length - 2]
+    const currentAvg = weekGroups[currentWeekKey].reduce((a, b) => a + b, 0) / weekGroups[currentWeekKey].length
+    const prevAvg = weekGroups[prevWeekKey].reduce((a, b) => a + b, 0) / weekGroups[prevWeekKey].length
+    const change = currentAvg - prevAvg
+    const changePercent = prevAvg !== 0 ? (change / prevAvg) * 100 : 0
+
+    return { currentAvg, prevAvg, change, changePercent }
   }, [chartData])
 
   if (!measurement) {
@@ -236,6 +262,30 @@ export default function ProgressChart({ measurement, entries }: ProgressChartPro
               {stats.max.toFixed(1)} <span className="text-sm font-normal text-slate-500">{displayUnit}</span>
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Weekly Average Change - always visible */}
+      {weeklyAvgChange && (
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Weekly Avg Change
+            </p>
+            <div className={`px-2.5 py-1 rounded-full text-sm font-medium
+                            ${weeklyAvgChange.change < 0
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                              : weeklyAvgChange.change > 0
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            }`}>
+              {weeklyAvgChange.change > 0 ? '+' : ''}{weeklyAvgChange.change.toFixed(1)} {displayUnit}
+              {' '}({weeklyAvgChange.changePercent > 0 ? '+' : ''}{weeklyAvgChange.changePercent.toFixed(1)}%)
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            This week avg: {weeklyAvgChange.currentAvg.toFixed(1)} vs last week: {weeklyAvgChange.prevAvg.toFixed(1)} {displayUnit}
+          </p>
         </div>
       )}
     </div>
