@@ -9,6 +9,7 @@ import MeasurementDetailModal from './MeasurementDetailModal'
 import EntryFormModal from './EntryFormModal'
 import JP3FormModal from './JP3FormModal'
 import QuickLogBar from './QuickLogBar'
+import ProgressPhotosSection from './ProgressPhotosSection'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useEntries } from '@/hooks/useEntries'
 import { getDisplayUnit } from '@/lib/utils'
@@ -178,6 +179,11 @@ export default function MeasurementList({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Progress Photos Section */}
+      {measurements.length > 0 && (
+        <ProgressPhotosSection measurements={measurements} />
       )}
 
       {/* Add Measurement Modal */}
